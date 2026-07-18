@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 
 import java.security.Key;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -40,6 +41,7 @@ public class JwtService {
     }
 
     public Key key() {
+        //signing key method
         return Keys.hmacShaKeyFor(
                 Decoders.BASE64URL.decode(SECRET_KEY)
         );
@@ -70,6 +72,29 @@ public class JwtService {
     private Boolean isTokenValid(String token, UserDetails userDetails){
         final String userName = getUsername(token);
         return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    public String getEmailFromToken(String token){
+        return getUsername(token);
+    }
+
+    public String generateToken(UserDetails userDetails){
+        // creates an empty map of claims
+        // token will contain the standard claims not extra claims .
+        return generateToken(new HashMap<>(), userDetails);
+    }
+
+    public String generatedRefresh(Map<String, Object> extractClaims, UserDetails userDetails){
+
+        String token = Jwts.builder()
+                .setClaims(extractClaims)
+                .setSubject(userDetails.getUsername())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 604800000))
+                .signWith(key(), SignatureAlgorithm.HS256)
+                .compact();
+
+        return token;
     }
 
     public Boolean ValidateToken(String token){
