@@ -59,6 +59,32 @@ public class JwtService {
         return (Claims) Jwts.parser().setSigningKey(key()).build();
     }
 
+    private Date getExpiration(String token){
+        return extractClaims(token, Claims::getExpiration);
+    }
+    private Boolean isTokenExpired(String token){
+        return getExpiration(token).before(new Date());
+
+    }
+
+    private Boolean isTokenValid(String token, UserDetails userDetails){
+        final String userName = getUsername(token);
+        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
+
+    public Boolean ValidateToken(String token){
+
+        String userEmail = getUsername(token);
+
+        if (StringUtils.isNotEmpty(userEmail) && !isTokenExpired(token)){
+            UserDetails userDetails = this.userDetailsService.loadUserByUsername(token);
+            return isTokenValid(token, userDetails);
+        }
+
+        return false;
+
+    }
+
 
 
     }
