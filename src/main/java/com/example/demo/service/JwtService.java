@@ -22,7 +22,7 @@ public class JwtService {
 
     private final UserDetailsService userDetailsService;
 
-    @Value("${jwt.secret}") // injecting our secret key
+    @Value("${jwt.secretkey}") // injecting our secret key
     private String SECRET_KEY;
 
     public JwtService(UserDetailsService userDetailsService) {
