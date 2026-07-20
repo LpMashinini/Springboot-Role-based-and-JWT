@@ -47,4 +47,17 @@ public class AuthenticationService {
                 .build();
 
     }
+
+    public AuthenticationResponse refreshToken(String refreshToken){
+
+        var user = userRepository.findByEmail(jwtService.getEmailFromToken(refreshToken))
+                .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
+        var jwtToken = jwtService.generateToken(user);
+        var newRefreshToken = jwtService.generatedRefresh(new HashMap<>(), user);
+
+        return AuthenticationResponse.builder()
+                .authenticationToken(jwtToken)
+                .refreshToken(newRefreshToken)
+                .build();
+    }
 }
