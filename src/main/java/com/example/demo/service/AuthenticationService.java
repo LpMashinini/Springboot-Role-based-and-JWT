@@ -1,5 +1,6 @@
 package com.example.demo.service;
 
+import com.example.demo.dto.request.AuthenticationRequest;
 import com.example.demo.dto.response.AuthenticationResponse;
 import com.example.demo.dto.request.RegisterRequest;
 import com.example.demo.entity.Role;
@@ -7,6 +8,8 @@ import com.example.demo.entity.User;
 import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -48,6 +51,23 @@ public class AuthenticationService {
 
     }
 
+    public AuthenticationResponse authenticate(AuthenticationRequest authenticationRequest){
+
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(authenticationRequest.getEmail(), authenticationRequest.getPassword())
+        );
+
+        var user = userRepository.findByEmail(authenticationRequest.getEmail()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
+        var jwtToken = jwtService.generateToken(user);
+        var refreshToken = jwtService.generatedRefresh(new HashMap<>(), user);
+
+        return AuthenticationResponse.builder()
+                .authenticationToken(jwtToken)
+                .refreshToken(refreshToken)
+                .build();
+
+    }
+
     public AuthenticationResponse refreshToken(String refreshToken){
 
         var user = userRepository.findByEmail(jwtService.getEmailFromToken(refreshToken))
@@ -59,5 +79,9 @@ public class AuthenticationService {
                 .authenticationToken(jwtToken)
                 .refreshToken(newRefreshToken)
                 .build();
+    }
+
+    public Boolean validateToken(String token){
+        return jwtService.ValidateToken(token);
     }
 }
