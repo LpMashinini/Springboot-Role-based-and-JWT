@@ -36,17 +36,16 @@ public class JwtService {
                 .claim("roles", userDetails.getAuthorities())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
-                .signWith(key(), SignatureAlgorithm.HS256)
+                .signWith(getSignInkey(), SignatureAlgorithm.HS256)
                 .compact();
 
         return token;
     }
 
-    public Key key() {
+    public Key getSignInkey() {
         //signing key method
-        return Keys.hmacShaKeyFor(
-                Decoders.BASE64URL.decode(SECRET_KEY)
-        );
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String getUsername(String token){
@@ -60,7 +59,8 @@ public class JwtService {
     }
 
     private Claims extractAllClaims(String token){
-        return (Claims) Jwts.parser().setSigningKey(key()).build();
+
+        return Jwts.parser().setSigningKey(getSignInkey()).build().parseClaimsJws(token).getBody();
     }
 
     private Date getExpiration(String token){
@@ -93,7 +93,7 @@ public class JwtService {
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 604800000))
-                .signWith(key(), SignatureAlgorithm.HS256)
+                .signWith(getSignInkey(), SignatureAlgorithm.HS256)
                 .compact();
 
         return token;
