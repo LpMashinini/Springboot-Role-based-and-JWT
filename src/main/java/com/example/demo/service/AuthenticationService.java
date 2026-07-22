@@ -41,7 +41,7 @@ public class AuthenticationService {
          userRepository.save(user); // saves user in the database
 
         var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generatedRefresh(new HashMap<>(), user);
+        var refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
 
         // returns both tokens in wrapped AuthenticationResponse DTO to the client
         return AuthenticationResponse.builder()
@@ -59,7 +59,7 @@ public class AuthenticationService {
 
         var user = userRepository.findByEmail(authenticationRequest.getEmail()).orElseThrow(() -> new UsernameNotFoundException("User not found"));
         var jwtToken = jwtService.generateToken(user);
-        var refreshToken = jwtService.generatedRefresh(new HashMap<>(), user);
+        var refreshToken = jwtService.generateRefresh(new HashMap<>(), user);
 
         return AuthenticationResponse.builder()
                 .authenticationToken(jwtToken)
@@ -73,7 +73,7 @@ public class AuthenticationService {
         var user = userRepository.findByEmail(jwtService.getEmailFromToken(refreshToken))
                 .orElseThrow(() -> new IllegalArgumentException("Invalid refresh token"));
         var jwtToken = jwtService.generateToken(user);
-        var newRefreshToken = jwtService.generatedRefresh(new HashMap<>(), user);
+        var newRefreshToken = jwtService.generateRefresh(new HashMap<>(), user);
 
         return AuthenticationResponse.builder()
                 .authenticationToken(jwtToken)
@@ -81,7 +81,8 @@ public class AuthenticationService {
                 .build();
     }
 
-    public Boolean validateToken(String token){
+    public Boolean ValidateToken(String token){
+
         return jwtService.ValidateToken(token);
     }
 }

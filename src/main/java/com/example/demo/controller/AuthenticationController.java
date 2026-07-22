@@ -58,7 +58,7 @@ public class AuthenticationController {
     public ResponseEntity<Boolean> validateToken(@RequestParam("token") String token){
 
         try{
-            Boolean res = authenticationService.validateToken(token);
+            Boolean res = authenticationService.ValidateToken(token);
             return ResponseEntity.ok(res);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

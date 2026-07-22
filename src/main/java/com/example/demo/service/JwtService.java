@@ -2,22 +2,22 @@ package com.example.demo.service;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import io.micrometer.common.util.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
-import java.nio.charset.StandardCharsets;
-import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HexFormat;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
@@ -31,11 +31,14 @@ public class JwtService {
         this.userDetailsService = userDetailsService;
     }
 
+
+    // Generate token with extra claims
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails){
 
         String token = Jwts.builder()
                 .setSubject(userDetails.getUsername())
-                .claim("roles", userDetails.getAuthorities())
+                .claims(extraClaims)
+                .claim("roles", userDetails.getAuthorities().stream().map(GrantedAuthority::getAuthority).collect(Collectors.toList()))
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 24))
                 .signWith(getSignInkey(), Jwts.SIG.HS256)
@@ -44,9 +47,17 @@ public class JwtService {
         return token;
     }
 
+    public String generateToken(UserDetails userDetails){
+        // creates an empty map of claims
+        // token will contain the standard claims not extra claims .
+        return generateToken(new HashMap<>(), userDetails);
+    }
+
+
     public SecretKey getSignInkey() {
         //signing key method
-        return Keys.hmacShaKeyFor(SECRET_KEY.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes = Decoders.BASE64.decode(SECRET_KEY);
+        return Keys.hmacShaKeyFor(keyBytes);
     }
 
     public String getUsername(String token){
@@ -59,7 +70,7 @@ public class JwtService {
         return claimsResolver.apply(claims);
     }
 
-    private Claims extractAllClaims(String token){
+    public Claims extractAllClaims(String token){
 
         return Jwts.parser()
                 .verifyWith(getSignInkey())
@@ -86,23 +97,17 @@ public class JwtService {
         return getUsername(token);
     }
 
-    public String generateToken(UserDetails userDetails){
-        // creates an empty map of claims
-        // token will contain the standard claims not extra claims .
-        return generateToken(new HashMap<>(), userDetails);
-    }
+    public String generateRefresh(Map<String, Object> extractClaims, UserDetails userDetails){
 
-    public String generatedRefresh(Map<String, Object> extractClaims, UserDetails userDetails){
-
-        String token = Jwts.builder()
+        String refreshToken = Jwts.builder()
                 .setClaims(extractClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + 604800000))
-                .signWith(getSignInkey(), SignatureAlgorithm.HS256)
+                .signWith(getSignInkey(), Jwts.SIG.HS256)
                 .compact();
 
-        return token;
+        return refreshToken;
     }
 
     public Boolean ValidateToken(String token){
